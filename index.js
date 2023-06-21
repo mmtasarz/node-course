@@ -23,6 +23,7 @@ app.get("/", (req, res) => {
 const dbPromise = open({
   filename: "mydb.db",
   driver: sqlite3.Database,
+  
 });
 
 
