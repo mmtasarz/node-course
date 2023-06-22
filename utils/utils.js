@@ -70,7 +70,16 @@ async function selectUserExercisesFromDatabase(
   }
 }
 
+function validateDate(date) {
+  const regex = new RegExp(
+    /^(19|20)\d\d[- /.](0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])$/
+  );
+  
+  return regex.test(date) && date === new Date(date).toISOString().split("T")[0];
+}
+
 module.exports = {
   selectAllUsersFromDatabase,
   selectUserExercisesFromDatabase,
+  validateDate,
 };

@@ -1,19 +1,14 @@
+// @ts-nocheck
 const asyncHandler = require("express-async-handler");
-const { selectAllUsersFromDatabase } = require("../utils/utils");
-const { open } = require("sqlite");
+const { selectAllUsersFromDatabase, validateDate } = require("../utils/utils");
 const sqlite3 = require("sqlite3");
-const util = require("util");
-
-const dbPromise = open({
-  filename: "mydb.db",
-  driver: sqlite3.Database,
-});
+const db = require('../db');
 
 const sqlInsertIntoExercises = `INSERT INTO Exercises (userId, exerciseId, duration, description, date)
 VALUES(?,?,?,?,?)`;
 
 exports.create_exercise = asyncHandler(async function (req, res) {
-  const db = await dbPromise;
+  // const db = await dbPromise;
   const allUsers = await selectAllUsersFromDatabase();
   const { duration, description, date } = req.body;
   const userId = Number(req.params._id);
@@ -34,10 +29,20 @@ exports.create_exercise = asyncHandler(async function (req, res) {
     return;
   }
 
+  if(!Number(duration) || Number(duration)<=0){
+    const message = Number(duration) <= 0
+    ? "Duration has to be grater than 0." :
+    'Duration value has to be a number.'
+    
+    res.writeHead(404, { "Content-Type": "text/plain" });
+    res.end(message);
+    return;
+  }
+
   if (!validateDate(exerciseDate)) {
     res.writeHead(404, { "Content-Type": "text/plain" });
     res.end(
-      "Wrong date format. Please provide date using correct format - YYYY-MM-DD."
+      "Please provide date using correct format - YYYY-MM-DD. Make sure that provided date exists."
     );
     return;
   }
@@ -61,9 +66,4 @@ exports.create_exercise = asyncHandler(async function (req, res) {
   res.json(newExercise);
 });
 
-function validateDate(date) {
-  const regex = new RegExp(
-    /^(19|20)\d\d[- /.](0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])$/
-  );
-  return regex.test(date);
-}
+

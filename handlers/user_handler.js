@@ -1,18 +1,12 @@
 // @ts-nocheck
 const asyncHandler = require("express-async-handler");
-const { open } = require("sqlite");
-const sqlite3 = require("sqlite3");
+const db = require('../db');
 const {selectAllUsersFromDatabase} = require('../utils/utils');
 
-const dbPromise = open({
-  filename: "mydb.db",
-  driver: sqlite3.Database,
-});
-
-const sqlInsertIntoUsers = `INSERT INTO Users (_id, username) VALUES(?,?)`;
+const sqlInsertIntoUsers = `
+INSERT INTO Users (username) VALUES(?)`;
 
 exports.create_user = asyncHandler(async function (req, res) {
-  const db = await dbPromise;
   const allExistingUsers = await selectAllUsersFromDatabase();
   const newUsername = req.body.username;
 
@@ -27,20 +21,21 @@ exports.create_user = asyncHandler(async function (req, res) {
   if (newUsername.length === 0) {
     return res.send("<p>Username cannot be empty.</p>");
   }
-
-  const newUser = {
-    _id: Math.floor(Math.random() * 1e9),
-    username: req.body.username,
-  };
-
-  await db.run(sqlInsertIntoUsers, [newUser._id, newUser.username], (error) => {
-    if (error) {
-      console.error(error.message);
-    }
-
-    console.log("A new row was created");
-  });
-  res.json(newUser);
+ 
+  const userId = new Promise(function(resolve, reject){
+    db.run(sqlInsertIntoUsers, [newUsername], function( error) {
+      if (error) {
+        console.error(error.message);
+        reject(error)
+      }
+      resolve(this.lastID);
+    });
+  })
+ 
+  res.json({
+      _id: await userId,
+      username: req.body.username,
+    });
 });
 
 exports.get_users = asyncHandler(async function (req, res) {

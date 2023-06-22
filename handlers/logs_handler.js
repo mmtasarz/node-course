@@ -3,6 +3,7 @@ const asyncHandler = require("express-async-handler");
 const {
   selectAllUsersFromDatabase,
   selectUserExercisesFromDatabase,
+  validateDate
 } = require("../utils/utils");
 
 exports.get_logs = asyncHandler(async function (req, res) {
@@ -24,7 +25,25 @@ exports.get_logs = asyncHandler(async function (req, res) {
       return;
     }
 
-    if (from || to || limit) {
+    if(from || to || limit){
+      if(from && !validateDate(from)){
+        res.writeHead(422, { "Content-Type": "text/plain" });
+        res.end("Wrong from date value. Please provide date in YYYY-MM-DD format.");
+        return;
+      }
+
+      if(to && !validateDate(to)){
+        res.writeHead(422, { "Content-Type": "text/plain" });
+        res.end("Wrong to date value. Please provide date in YYYY-MM-DD format.");
+        return;
+      }
+
+      if(limit && !Number(limit)){
+        res.writeHead(422, { "Content-Type": "text/plain" });
+        res.end("Limit has to be a numeric value");
+        return;
+      }
+
       results = await selectUserExercisesFromDatabase(userId, from, to, limit);
     }
 
